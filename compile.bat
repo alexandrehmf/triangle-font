@@ -1,0 +1,1 @@
+gcc app.c -luser32 -lopengl32 -lgdi32
