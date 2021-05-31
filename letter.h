@@ -61,7 +61,23 @@ triangle_selection create_tri_selection()
 	return(selection);
 }
 
-void add_vert(letter *toLetter,float x, float y)
+void drawTriSel(triangle_selection * sel, float s0, float t)
+{
+	if(sel->a)
+	{
+		drawMark(sel->a->mrk,t,s0+((s0/3) * sin(15*t)));
+	}
+	if(sel->b)
+	{
+		drawMark(sel->b->mrk,t,s0+((s0/3) * sin(15*t)));
+	}
+	if(sel->c)
+	{
+		drawMark(sel->c->mrk,t,s0+((s0/3) * sin(15*t)));
+	}
+}
+
+vertex * add_vert(letter *toLetter,float x, float y)
 {
 	vertex * vertp = malloc(sizeof(vertex));
 	vertp->mrk.pos.x = x;
@@ -81,6 +97,7 @@ void add_vert(letter *toLetter,float x, float y)
 		toLetter->lastv = vertp;
 	}
 	toLetter->nv++;
+	return (vertp);
 }
 
 void drawVerts(letter L)
@@ -114,6 +131,13 @@ void select_vert(triangle_selection * selection, vert_slot slot, vertex * vert)
 
 void add_tri(letter * toLetter, triangle_selection * sel)
 {
+	if ((sel->a == NULL) |
+	    (sel->b == NULL) |
+		(sel->c == NULL) )
+	{
+		return;	
+	}
+	
 	tri * triptr = malloc(sizeof(tri));
 	triptr->a = sel->a;
 	triptr->b = sel->b;
@@ -156,6 +180,54 @@ void add_tri(letter * toLetter, triangle_selection * sel)
 	return;
 }
 
+void remove_tri(letter * fromLetter, triangle_selection * sel)
+{
+	if ((sel->a == NULL) |
+	    (sel->b == NULL) |
+		(sel->c == NULL) |
+		(fromLetter->nt == 0))
+	{
+		return;	
+	}
+	
+	tri * t = fromLetter->firstt;
+	
+	while (t)
+	{
+		if (    ( (t->a == sel->a) || (t->a == sel->b) || (t->a == sel->c) ) &&
+			    ( (t->b == sel->a) || (t->b == sel->b) || (t->b == sel->c) ) &&
+				( (t->c == sel->a) || (t->c == sel->b) || (t->c == sel->c) )  )
+		{
+			break;
+		}
+		t = t->next;
+	}
+	
+	if (t)
+	{
+		if (t->previous)
+		{
+			t->previous->next = t->next;
+		}
+		else
+		{
+			fromLetter->firstt = t->next;
+		}
+		
+		if (t->next)
+		{
+			t->next->previous = t->previous;
+		}
+		else
+		{
+			fromLetter->lastt = t->previous;
+		}
+		
+		fromLetter->nt--;
+		free(t);
+	}
+}
+
 void drawTris(letter L)
 {
 	tri * ttp = L.firstt;
@@ -186,3 +258,111 @@ vertex* choose(float x, float y, letter * l)
 	
 }
 
+void writeLetter(letter * L, FILE * f, char name)
+{
+	fprintf(f,"a%ca\n", name);
+	fprintf(f,"v\n");
+	for(vertex* v = L->firstv ; v != NULL ; v = v->next)
+	{
+		fprintf(f,"%f %f\n",v->mrk.pos.x,v->mrk.pos.y);
+	}
+	fprintf(f,"t\n");
+	for(tri * t = L->firstt; t != NULL; t=t->next)
+	{
+		int n = 1;
+		for(vertex * v = t->a; v->previous != NULL; v = v->previous)
+		{
+			n++;
+		}
+		fprintf(f,"%d ",n);
+		n = 1;
+		for(vertex * v = t->b; v->previous != NULL; v = v->previous)
+		{
+			n++;
+		}
+		fprintf(f,"%d ",n);
+		n = 1;
+		for(vertex * v = t->c; v->previous != NULL; v = v->previous)
+		{
+			n++;
+		}
+		fprintf(f,"%d\n",n);
+	}
+}
+
+void readLetter(letter * L, FILE * f)
+{
+	fscanf(f, "v");
+	
+	int r;
+	float tx, ty;
+	while((r = fscanf(f,"%f %f", &tx, &ty))!=0)
+	{
+		add_vert(L,tx,ty);
+	}
+	
+	fscanf(f, "t");
+	
+	int a,b,c;
+	triangle_selection selection = create_tri_selection();
+	while((r = fscanf(f,"%d %d %d",&a,&b,&c)) > 0)
+	{
+		printf("r é %d\n",r);
+		vertex * V = L->firstv;
+		for(int n = a; n > 1; n--)
+		{
+			V=V->next;
+		}
+		selection.a = V;
+		
+		V = L->firstv;
+		for(int n = b; n > 1; n--)
+		{
+			V=V->next;
+		}
+		selection.b = V;
+		
+		V = L->firstv;
+		for(int n = c; n > 1; n--)
+		{
+			V=V->next;
+		}
+		selection.c = V;
+		
+		add_tri(L,&selection);
+	}
+	
+}
+
+void save_font(letter * font)
+{
+	FILE * f = fopen("default","w");
+	
+	for (int i = 0; i < 255; i++)
+	{
+		if(i == 26) continue;
+		writeLetter(&(font[i]),f,i);
+	}
+	
+	fclose(f);
+}
+
+void load_font(letter * font)
+{
+	FILE * f = fopen("default","r");
+	
+	int r,a,b,d;
+	char c;
+	getc(f);
+	r=0;
+	while( (c = (char)getc(f)) != -1 )
+	{
+		a=getc(f);
+		b=getc(f);
+		printf("%d reading letter %d - %c\n",(int)c,c,c);
+		readLetter(&(font[c]),f);
+		d=getc(f);
+	}
+	
+	fclose(f);
+}

@@ -35,6 +35,12 @@ LPARAM lParam)
 			float Y = HIWORD(lParam);
 			onLMBD(X,Y);
 		}break;
+		case WM_LBUTTONUP:
+		{
+			float X = LOWORD(lParam);
+			float Y = HIWORD(lParam);
+			onLMBU(X,Y);
+		}break;
 		case WM_MOUSEMOVE:
 		{
 			float X = LOWORD(lParam);
@@ -51,18 +57,28 @@ LPARAM lParam)
 				{
 					onKeyDown(space);
 				}break;
+				case 0x51://q
+				{
+					onKeyDown(kq);
+				}break;
 				case 0x57://w
 				{
+					onKeyDown(kw);
+				}break;
+				case 0x45://e
+				{
+					onKeyDown(ke);
 				}break;
 				case 0x41://a
 				{
-					onKeyDown(ak);
+					onKeyDown(ka);
 				}break;
 				case 0x53://s
 				{
 				}break;
 				case 0x44://d
 				{
+					onKeyDown(kd);
 				}break;
 				case 0x58: //x
 				{
@@ -81,6 +97,14 @@ LPARAM lParam)
 				case 0x72: //f3
 				{
 					onKeyDown(f3);
+				}break;
+				case 0x74://f5
+				{
+					onKeyDown(f5);
+				}break;
+				case 0x75: //f6
+				{
+					onKeyDown(f6);
 				}break;
 			}
 		
@@ -117,6 +141,11 @@ LPARAM lParam)
 		case WM_DESTROY:
 		{
 			running = 0;
+		}break;
+		case WM_CHAR:
+		{
+			printf("%d - %c\n",wParam,wParam);
+			onChar(wParam);
 		}break;
 		default:
 		{
