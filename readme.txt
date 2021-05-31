@@ -7,3 +7,5 @@ press f2 to enter selecting mode
  you have three slots to select, each slot is selected pressing q,w or e
  after the three slots are filled press a to add triangle or d to delete
 press f3 to enter letterSelecting mode and chose which letter to edit
+press f5 to save to default file
+press f6 to load
